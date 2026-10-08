@@ -7,10 +7,11 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://:9092,INTERNAL://:19092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:19092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -18,6 +19,18 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     volumes:
       - kafka-data:/var/lib/kafka/data
+
+  connect:
+    image: apache/kafka:4.2.1
+    container_name: kartly-connect
+    depends_on:
+      - kafka
+    ports:
+      - "8088:8083"
+    command: ["/opt/kafka/bin/connect-distributed.sh", "/etc/kafka-connect/connect-distributed.properties"]
+    volumes:
+      - ./connect/connect-distributed.properties:/etc/kafka-connect/connect-distributed.properties:ro
+      - ./connect/plugins:/opt/kafka/plugins
 
 volumes:
   kafka-data:
